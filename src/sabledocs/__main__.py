@@ -25,11 +25,10 @@ def cli():
 
     print()
     print("Starting documentation generation.")
-    if len(sys.argv) == 2 {
+    if len(sys.argv) == 2:
         sable_config = SableConfig(sys.argv[1])
-    } else {
+    else:
         sable_config = SableConfig("sabledocs.toml")
-    }
 
     if not os.path.exists(sable_config.input_descriptor_file):
         print()
