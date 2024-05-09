@@ -93,7 +93,7 @@ def parse_enum(enum: EnumDescriptorProto, ctx: ParseContext, parent_message, nes
         ev.name = enum_value.name
         ev.number = enum_value.number
         ev.description = ctx.GetComments()
-        ev.description_html = markdown_to_html(ev.description)
+        ev.description_html = markdown_to_html(ev.description, ctx.config)
         ev.line_number = ctx.GetLineNumber()
 
         return ev
@@ -103,7 +103,7 @@ def parse_enum(enum: EnumDescriptorProto, ctx: ParseContext, parent_message, nes
     e.full_name = f"{ctx.package.name}.{nested_type_chain}{enum.name}".lstrip(".")
     e.parent_message = parent_message
     e.description = ctx.GetComments()
-    e.description_html = markdown_to_html(e.description)
+    e.description_html = markdown_to_html(e.description, ctx.config)
     e.source_file_path = ctx.source_file_path
     e.line_number = ctx.GetLineNumber()
     e.repository_url = build_source_code_url(
@@ -135,7 +135,7 @@ def parse_field(field: FieldDescriptorProto, containing_message: DescriptorProto
     mf.number = field.number
     mf.label = to_label_name(field.label, field.proto3_optional)
     mf.description = ctx.GetComments()
-    mf.description_html = markdown_to_html(mf.description)
+    mf.description_html = markdown_to_html(mf.description, ctx.config)
     mf.line_number = ctx.GetLineNumber()
     mf.full_type = field.type_name.strip(".") if field.type_name != "" else to_type_name(field.type)
     mf.default_value = field.default_value
@@ -171,7 +171,7 @@ def parse_message(message: DescriptorProto, ctx: ParseContext, parent_message, n
     m.full_name = f"{ctx.package.name}.{nested_type_chain}{message.name}".lstrip(".")
     m.parent_message = parent_message
     m.description = ctx.GetComments()
-    m.description_html = markdown_to_html(m.description)
+    m.description_html = markdown_to_html(m.description, ctx.config)
     m.source_file_path = ctx.source_file_path
     m.line_number = ctx.GetLineNumber()
     m.repository_url = build_source_code_url(
@@ -183,8 +183,9 @@ def parse_message(message: DescriptorProto, ctx: ParseContext, parent_message, n
         m.line_number)
 
     # NOTE: The processing of nested types have to happen before processing the fields, to have the Entry nested types representing maps already present.
-    parse_messages(message.nested_type, ctx.ExtendPath(COMMENT_MESSAGE_MESSAGE_INDEX), m, f"{message.name}.", config)
-    parse_enums(message.enum_type, ctx.ExtendPath(COMMENT_MESSAGE_ENUM_INDEX), m, f"{message.name}.", config)
+    new_nested_type_chain = f"{nested_type_chain}{message.name}."
+    parse_messages(message.nested_type, ctx.ExtendPath(COMMENT_MESSAGE_MESSAGE_INDEX), m, new_nested_type_chain, config)
+    parse_enums(message.enum_type, ctx.ExtendPath(COMMENT_MESSAGE_ENUM_INDEX), m, new_nested_type_chain, config)
 
     m.is_map_entry = message.options.map_entry
     for i, mf in enumerate(message.field):
@@ -213,7 +214,7 @@ def parse_service_method(service_method: MethodDescriptorProto, ctx: ParseContex
     sm = ServiceMethod()
     sm.name = service_method.name
     sm.description = ctx.GetComments()
-    sm.description_html = markdown_to_html(sm.description)
+    sm.description_html = markdown_to_html(sm.description, ctx.config)
     sm.line_number = ctx.GetLineNumber()
     sm.request = ServiceMethodArgument(
         service_method.input_type[service_method.input_type.rfind(".") + 1:],
@@ -235,7 +236,7 @@ def parse_service(service: ServiceDescriptorProto, ctx: ParseContext):
     s.name = service.name
     s.full_name = f"{ctx.package.name}.{service.name}".lstrip(".")
     s.description = ctx.GetComments()
-    s.description_html = markdown_to_html(s.description)
+    s.description_html = markdown_to_html(s.description, ctx.config)
     s.source_file_path = ctx.source_file_path
     s.line_number = ctx.GetLineNumber()
     s.repository_url = build_source_code_url(
@@ -378,7 +379,7 @@ def parse_proto_descriptor(sable_config: SableConfig):
             ctx = ParseContext.New(sable_config, package, file.name, locations)
 
             package.description += ctx.GetComments(str(COMMENT_PACKAGE_INDEX))
-            package.description_html = markdown_to_html(package.description)
+            package.description_html = markdown_to_html(package.description, sable_config)
 
             parse_enums(file.enum_type, ctx.WithPath(COMMENT_ENUM_INDEX), None, "", sable_config)
             parse_messages(file.message_type, ctx.WithPath(COMMENT_MESSAGE_INDEX), None, "", sable_config)
@@ -401,7 +402,7 @@ def parse_proto_descriptor(sable_config: SableConfig):
             sable_config)
 
 
-def markdown_to_html(md: str):
+def markdown_to_html(md: str, sable_config: SableConfig):
     # We trim single spaces at the beginning of lines, because those are most probably due to the common pattern of
     # having a single space between // and the start of the comment line in code comments.
     # And the single leading space causes problems with the markdown parsing, particularly with fenced code blocks.
@@ -418,4 +419,4 @@ def markdown_to_html(md: str):
     if all(map(lambda l: l == "" or l.startswith(" "), md.split("\n")[1:])):
         md = re.sub(r"^ ", r"", md, flags=re.MULTILINE)
 
-    return markdown.markdown(md, extensions=['fenced_code'])
+    return markdown.markdown(md, extensions=sable_config.markdown_extensions)

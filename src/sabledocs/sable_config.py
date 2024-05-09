@@ -21,6 +21,8 @@ class SableConfig:
         self.input_descriptor_file = "descriptor.pb"
         self.template = "_default"
         self.template_path = ""
+        self.extra_template_path = ""
+        self.extra_template_suffix = ".html"
         self.footer_content = ""
         self.main_page_content_file = ""
         self.output_dir = "sabledocs_output"
@@ -33,6 +35,7 @@ class SableConfig:
         self.ignore_comment_lines_containing: List[str] = []
         self.hidden_packages: List[str] = []
         self.member_ordering = MemberOrdering.ALPHABETICAL
+        self.markdown_extensions: List[str] = ['fenced_code']
 
         if path.exists(config_file_path):
             print(f"Configuration found in {config_file_path}")
@@ -43,6 +46,10 @@ class SableConfig:
                 self.input_descriptor_file = config_values.get('input-descriptor-file', self.input_descriptor_file)
                 self.template = config_values.get('template', self.template).rstrip("/\\")
                 self.template_path = config_values.get('template-path', self.template_path).rstrip("/\\")
+                self.extra_template_path = config_values.get(
+                    'extra-template-path',
+                    self.extra_template_path).rstrip("/\\")
+                self.extra_template_suffix = config_values.get('extra-template-suffix', self.extra_template_suffix)
                 self.footer_content = config_values.get('footer-content', self.footer_content)
                 self.main_page_content_file = config_values.get('main-page-content-file', self.main_page_content_file)
                 self.output_dir = config_values.get('output-dir', self.output_dir).rstrip("/\\")
@@ -61,6 +68,7 @@ class SableConfig:
                 self.ignore_comments_after = config_values.get('ignore-comments-after', [])
                 self.ignore_comment_lines_containing = config_values.get('ignore-comment-lines-containing', [])
                 self.hidden_packages = config_values.get('hidden-packages', [])
+                self.markdown_extensions = config_values.get('markdown-extensions', self.markdown_extensions)
 
                 if 'member-ordering' in config_values:
                     if config_values["member-ordering"] == "preserve":

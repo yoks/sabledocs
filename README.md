@@ -102,6 +102,12 @@ hidden-packages = ["google.protobuf"]
 # were listed in the input when `protoc` was executed.
 # Default value: ""
 member-ordering = "preserve"
+
+# The markdown extensions supported by the main-page-content-file
+# Default value: ["fenced_code"]
+# See: https://python-markdown.github.io/extensions/#officially-supported-extensions
+markdown-extensions = ["fenced_code", "nl2br"]
+
 ```
 
 ### Main page content
@@ -115,9 +121,10 @@ main-page-content-file = "intro.md"
 
 See the example on the main page of the [demo site](https://markvincze.github.io/sabledocs/demo/).
 
-### Using with Docker
+### Static content
 
-For convenient usage in CI builds and other scenarios where a Docker image is preferable, the image [`markvincze/sabledocs`](https://hub.docker.com/r/markvincze/sabledocs) can be used, which has both the `protoc` CLI, and `sabledocs` preinstalled.
+Extra static content, such as additional HTML files or images can be included in the generated output by creating a directory called `static` next to the `sabledocs.toml` file, and copying the static files there.
+All the files inside the `static` folder will be copied to the _root_ of the generated output (so there won't be a `static` subfolder created).
 
 ### Markdown support
 
@@ -143,6 +150,34 @@ message SearchRequest {
 ```
 
 (If you include code blocks in a comment, then it's better to use single-line comments (`// ...`) as opposed to block comments (`/* ... */`), because the `protoc` compiler trims all leading whitespace from the lines in block comments, thus the indentation in code blocks gets lost.)
+
+### Customize Jinja templates for primary content
+
+The `template-path` configuration parameter can be used to specify an alternative directory where the Jinja templates that drive the content of Sabledocs can be found.
+Copy the contents of the `src/sabledocs/templates/_default` from the current version of Sabledocs to the configured directory then edit the templates as necessary. 
+
+```toml
+template-path = "templates"
+```
+
+### Extra Jinja templates
+
+If you would like to include your own Jinja templates, specify the `extra-template-path` configuration parameter and
+all files that end in `template-path-suffix` (default ".html") will be processed and included as a Jinja template in the output
+path at a location relative to the `extra-template-path`.
+
+Also processes all subdirectories of `extra-template-path` recursively.  
+
+Prefix a subdirectory with `_` to have it ignored.
+
+```toml
+template-path = "extra-templates"
+template-path-suffix = ".tpl" # default value is ".html"
+```
+
+### Using with Docker
+
+For convenient usage in CI builds and other scenarios where a Docker image is preferable, the image [`markvincze/sabledocs`](https://hub.docker.com/r/markvincze/sabledocs) can be used, which has both the `protoc` CLI, and `sabledocs` preinstalled.
 
 ## For maintainers
 
